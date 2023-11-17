@@ -20,6 +20,7 @@ use axum::{
     http::StatusCode,
     extract::{Query, Path}, 
 };
+use dotenvy::dotenv;
 use serde::Deserialize;
 use serde_json::json;
 use tower_cookies::CookieManagerLayer;
@@ -36,7 +37,12 @@ struct HelloParams {
 #[tokio::main]
 async fn main() -> Result<()>{
     tracing_subscriber::fmt::init();
-    // Route all requests on "/" endpoint to anonymous handler
+
+    // check .env
+    match dotenv(){
+        Ok(_) => (),
+        Err(e) => println!("error reading .env : {}", e)
+    }
 
     // a handler is a async function which returns something that implements axum::response::IntoResponse
     let mc = ModelController::new().await?;
@@ -54,14 +60,17 @@ async fn main() -> Result<()>{
             web::mw_auth::mw_ctx_resolver
         ))
         .layer(CookieManagerLayer::new())
-        .fallback_service(route_static())
-        .fallback(not_found);
+        .fallback_service(route_static());
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    
+    let host = std::env::var("SERVER_HOST").expect("Unable to load Server Host");
+    let port = std::env::var("SERVER_PORT").expect("Unable to load Server Port");
+    let addr = format!("{}:{}", host, port).parse::<SocketAddr>().unwrap();
+    
 
     // hyper::server::Server
     tracing::info!("App running on http://{}", addr);
-    println!("try:  http://localhost:3000/root?name=visith");
+
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await
@@ -121,10 +130,6 @@ async fn main_response_mapper(
 
 	println!();
 	error_response.unwrap_or(res)
-}
-
-async fn not_found() -> impl IntoResponse {
-    (StatusCode::NOT_FOUND, "Not found")
 }
 
 

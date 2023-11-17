@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use axum::{Json, Router, routing::post};
 use serde_json::{Value, json};
-use tower_cookies::{Cookie, Cookies};
+use tower_cookies::{Cookie, Cookies, cookie::time::{OffsetDateTime, Duration}};
 
 use crate::{Error, Result, web::AUTH_TOKEN};
 
@@ -23,13 +23,21 @@ async fn api_login(cookies:  Cookies, Json(payload): Json<LoginPayload>) -> Resu
         return Err(Error::LoginFail);
     }
 
-    cookies.add(Cookie::new(AUTH_TOKEN, "user-1.exp.sign"));
+    let mut cookie = Cookie::new(AUTH_TOKEN, "user-1.exp.sign");
+    cookie.set_http_only(true);
+    cookie.set_path("/");
+    let mut now = OffsetDateTime::now_utc();
+    now += Duration::weeks(52);
+    cookie.set_expires(now);
+    cookies.add(cookie);
 
     let body = Json(json!({
         "result" : {
             "success" : true
         }
     }));
+
+    println!("{:?}", body);
 
     Ok(body)
 }

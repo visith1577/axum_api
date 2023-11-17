@@ -5,6 +5,7 @@ use axum::extract::State;
 use axum::http::request::Parts;
 use axum::{response::Response, http::Request, middleware::Next, extract::FromRequestParts, async_trait};
 use lazy_regex::regex_captures;
+use tower_cookies::cookie::time::{OffsetDateTime, Duration};
 use tower_cookies::{Cookies, Cookie};
 
 use super::AUTH_TOKEN;
@@ -15,7 +16,7 @@ pub async fn mw_require_auth<B>(
     req: Request<B>,
     next: Next<B>
 ) -> Result<Response> {
-    tracing::info!("->> {:12} - mw_require_auth", "MIDDLEWARE");
+    tracing::info!("->> {:12} - mw_require_auth - {ctx:?}", "MIDDLEWARE");
 
     ctx?;
 
@@ -30,7 +31,12 @@ pub async fn mw_ctx_resolver<B>(
 ) -> Result<Response> {
     tracing::info!("->> {:12} - mw_ctx_resolver", "MIDDLEWARE");
 
-    let auth_token = cookies.get(AUTH_TOKEN).map(|t| t.to_string());
+    let auth_token = cookies.get(AUTH_TOKEN).map(|mut t| {
+        let mut now = OffsetDateTime::now_utc();
+        now += Duration::weeks(52);
+        t.set_expires(now);
+        t.value().to_string()
+    });
 
     let result_ctx = match  auth_token
     .ok_or(Error::AuthFailNoAuthTokenCookie)
