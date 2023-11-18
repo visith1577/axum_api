@@ -7,6 +7,7 @@ use axum::{response::Response, http::Request, middleware::Next, extract::FromReq
 use lazy_regex::regex_captures;
 use tower_cookies::cookie::time::{OffsetDateTime, Duration};
 use tower_cookies::{Cookies, Cookie};
+use tracing::debug;
 
 use super::AUTH_TOKEN;
 
@@ -16,7 +17,7 @@ pub async fn mw_require_auth<B>(
     req: Request<B>,
     next: Next<B>
 ) -> Result<Response> {
-    tracing::info!("->> {:12} - mw_require_auth - {ctx:?}", "MIDDLEWARE");
+    debug!("{:12} - mw_require_auth - {ctx:?}", "MIDDLEWARE");
 
     ctx?;
 
@@ -29,7 +30,7 @@ pub async fn mw_ctx_resolver<B>(
     mut req: Request<B>,
     next: Next<B>
 ) -> Result<Response> {
-    tracing::info!("->> {:12} - mw_ctx_resolver", "MIDDLEWARE");
+    debug!("{:12} - mw_ctx_resolver", "MIDDLEWARE");
 
     let auth_token = cookies.get(AUTH_TOKEN).map(|mut t| {
         let mut now = OffsetDateTime::now_utc();
@@ -67,7 +68,7 @@ impl<S: Send + Sync> FromRequestParts<S> for Ctx {
     type Rejection = Error;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self> {
-        tracing::info!("->> {:12} - Ctx", "EXTRACTOR");
+        debug!("{:12} - Ctx", "EXTRACTOR");
 
         parts
         .extensions.get::<Result<Ctx>>()

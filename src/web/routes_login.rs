@@ -2,6 +2,7 @@ use serde::Deserialize;
 use axum::{Json, Router, routing::post};
 use serde_json::{Value, json};
 use tower_cookies::{Cookie, Cookies, cookie::time::{OffsetDateTime, Duration}};
+use tracing::debug;
 
 use crate::{Error, Result, web::AUTH_TOKEN};
 
@@ -17,7 +18,7 @@ pub fn routes() -> Router {
 }
 
 async fn api_login(cookies:  Cookies, Json(payload): Json<LoginPayload>) -> Result<Json<Value>> {
-    tracing::info!("->> {:12} - api_login", "HANDLER");
+    debug!("{:12} - api_login", "HANDLER");
 
     if payload.username != "visith" || payload.pwd != "root" {
         return Err(Error::LoginFail);
@@ -36,8 +37,6 @@ async fn api_login(cookies:  Cookies, Json(payload): Json<LoginPayload>) -> Resu
             "success" : true
         }
     }));
-
-    println!("{:?}", body);
 
     Ok(body)
 }

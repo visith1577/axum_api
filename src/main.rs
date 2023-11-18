@@ -25,6 +25,8 @@ use serde::Deserialize;
 use serde_json::json;
 use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
+use tracing::debug;
+use tracing_subscriber::EnvFilter;
 use uuid::Uuid;
 use std::net::SocketAddr;
 
@@ -36,7 +38,10 @@ struct HelloParams {
 
 #[tokio::main]
 async fn main() -> Result<()>{
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt()
+    .without_time()
+    .with_env_filter(EnvFilter::from_default_env())
+    .init();
 
     // check .env
     match dotenv(){
@@ -102,7 +107,7 @@ async fn main_response_mapper(
     req_method: Method,
     res: Response
 ) -> Response {
-    tracing::info!("->> {:>12} - main_response_mapper", "RES_MAPPER");
+    debug!("{:>12} - main_response_mapper", "RES_MAPPER");
     
     let uuid = Uuid::new_v4();
 
@@ -117,7 +122,7 @@ async fn main_response_mapper(
                 "req_uuid" : uuid.to_string(),
             }
         });
-        tracing::info!("->> - client_error_body: {client_error_body}");
+        debug!("- client_error_body: {client_error_body}");
 
         (*status_code ,Json(client_error_body)).into_response()
     });
@@ -128,7 +133,7 @@ async fn main_response_mapper(
 	let _ =
 		log_request(uuid, req_method, uri, ctx, service_error, client_error).await;
 
-	println!();
+	debug!("\n");
 	error_response.unwrap_or(res)
 }
 
