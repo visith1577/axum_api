@@ -3,11 +3,13 @@ mod web;
 mod model;
 mod context;
 mod log;
+mod config;
 
 pub use self::model::ModelController;
 pub use self::error::{Error, Result};
 pub use self::context::Ctx;
 pub use self::log::log_request;
+pub use self::config::config;
 
 
 use axum::http::{Uri, Method};
@@ -78,12 +80,20 @@ async fn main() -> Result<()>{
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
+        .with_graceful_shutdown(shutdown_signal())
         .await
         .unwrap();
 
     Ok(())
 }
 
+
+async fn shutdown_signal() {
+    tokio::signal::ctrl_c()
+    .await
+    .expect("expect tokio signal ctrl+c");
+    tracing::info!("recv: Signal shutdown");
+}
 
 async fn handler(
     Query(params): Query<HelloParams>
@@ -146,7 +156,7 @@ fn route_root() -> Router {
 
 fn route_static() -> Router {
     Router::new()
-    .nest_service("/", get_service(ServeDir::new("./static"))
+    .nest_service("/", get_service(ServeDir::new(&config().WEB_FOLDER))
     .handle_error(|err| async move {
         (
             StatusCode::INTERNAL_SERVER_ERROR,

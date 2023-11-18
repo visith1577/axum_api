@@ -9,6 +9,7 @@ pub type Result<T> = core::result::Result<T, Error>;
 #[derive(Clone, Debug, Serialize, strum_macros::AsRefStr)]
 #[serde(tag = "type", content = "data")]
 pub enum Error {
+	ConfigMissingError(&'static str),
     LoginFail,
     TicketDeleteFailError {id: u64},
     AuthFailNoAuthTokenCookie,

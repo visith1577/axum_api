@@ -16,7 +16,7 @@ async fn main() -> Result<()> {
             "pwd" : "root"
         })
     );
-    
+
 
     login_req.await?.print().await?;
 
