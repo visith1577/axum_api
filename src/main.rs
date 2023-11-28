@@ -4,6 +4,7 @@ mod model;
 mod context;
 mod log;
 mod config;
+mod utils;
 
 pub use self::model::ModelController;
 pub use self::error::{Error, Result};
